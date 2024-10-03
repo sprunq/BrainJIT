@@ -50,6 +50,11 @@ fn main() {
         nodes = CombineIncrements.optimize(nodes);
     }
 
+    if true {
+        let mut file = std::fs::File::create("optimized.txt").unwrap();
+        writeln!(file, "{}", syntax::indented(&nodes, 0)).unwrap();
+    }
+
     match cli.mode {
         Mode::Interpreted => {
             time!(Interpreter::new().interpret(&nodes));

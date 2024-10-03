@@ -1,6 +1,6 @@
 use std::num::Wrapping;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum Instruction {
     Increment { value: Wrapping<i8> },
     CellIncrement { value: i32 },
@@ -55,4 +55,32 @@ pub fn parse(str: &str) -> Result<Vec<Instruction>, ()> {
     }
 
     Ok(nodes)
+}
+
+pub fn indented(instrs: &Vec<Instruction>, indent: usize) -> String {
+    let mut result = String::new();
+
+    for instr in instrs {
+        result.push_str(&" ".repeat(indent));
+        match instr {
+            Instruction::Increment { value } => {
+                result.push_str(&format!("Increment {}\n", value.0));
+            }
+            Instruction::CellIncrement { value } => {
+                result.push_str(&format!("CellIncrement {}\n", value));
+            }
+            Instruction::Loop { nodes } => {
+                result.push_str("Loop\n");
+                result.push_str(&indented(nodes, indent + 4));
+            }
+            Instruction::Write => {
+                result.push_str("Write\n");
+            }
+            Instruction::Read => {
+                result.push_str("Read\n");
+            }
+        }
+    }
+
+    result
 }
