@@ -3,7 +3,10 @@ use execution::{
     interpreter::Interpreter,
     native::{codegen::CodeGeneration, state::State},
 };
-use optimize::{peephole::CombineIncrements, OptimizationPass};
+use optimize::{
+    peephole::{CombineIncrements, ReplaceSet},
+    OptimizationPass,
+};
 
 pub mod execution;
 pub mod optimize;
@@ -48,6 +51,7 @@ fn main() {
 
     if cli.optimize {
         nodes = CombineIncrements.optimize(nodes);
+        nodes = ReplaceSet.optimize(nodes);
     }
 
     if true {
@@ -57,7 +61,7 @@ fn main() {
 
     match cli.mode {
         Mode::Interpreted => {
-            time!(Interpreter::new().interpret(&nodes));
+            time!(Interpreter::new(30_000).interpret(&nodes));
         }
         Mode::Compiled => {
             let codegen = CodeGeneration::x64();

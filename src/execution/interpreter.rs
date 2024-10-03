@@ -2,15 +2,16 @@ use std::io::{self, Read, Write};
 
 use crate::syntax::Instruction;
 
+#[derive(Debug)]
 pub struct Interpreter {
     tape: Vec<u8>,
     pointer: usize,
 }
 
 impl Interpreter {
-    pub fn new() -> Self {
+    pub fn new(tape_size: usize) -> Self {
         Interpreter {
-            tape: vec![0; 30000],
+            tape: vec![0; tape_size],
             pointer: 0,
         }
     }
@@ -26,7 +27,7 @@ impl Interpreter {
                 }
                 Instruction::Loop { nodes } => {
                     while self.tape[self.pointer] != 0 {
-                        self.interpret(&nodes);
+                        self.interpret(nodes);
                     }
                 }
                 Instruction::Write => {
@@ -37,6 +38,9 @@ impl Interpreter {
                     let mut buffer = [0];
                     io::stdin().read_exact(&mut buffer).unwrap();
                     self.tape[self.pointer] = buffer[0];
+                }
+                Instruction::Set { value } => {
+                    self.tape[self.pointer] = *value;
                 }
             }
         }

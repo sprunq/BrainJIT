@@ -20,6 +20,10 @@ impl<'a> State<'a> {
         }
     }
 
+    /// Reads a single byte from the input.
+    ///
+    /// # Safety
+    /// .
     pub unsafe extern "C" fn getchar(state: &mut State, cell: *mut u8) -> u8 {
         let mut buffer = [0];
         match state.input.read_exact(&mut buffer) {
@@ -31,6 +35,10 @@ impl<'a> State<'a> {
         }
     }
 
+    /// Writes a single byte to the output.
+    ///
+    /// # Safety
+    /// .
     pub unsafe extern "C" fn putchar(state: &mut State, cell: *mut u8) -> u8 {
         match state.output.write_all(slice::from_raw_parts(cell, 1)) {
             Ok(_) => 0,

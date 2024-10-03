@@ -66,6 +66,12 @@ impl NativeCodeGenBackend for X64CodeGen {
         );
     }
 
+    fn generate_set(&self, ops: &mut Assembler<Self::Relocation>, value: u8) {
+        x64_alias_asm!(ops,
+            ; mov BYTE [cell_ptr], value as i8
+        );
+    }
+
     fn generate_loop(&self, ops: &mut Assembler<Self::Relocation>, nodes: &[Instruction]) {
         let backward_label = ops.new_dynamic_label();
         let forward_label = ops.new_dynamic_label();

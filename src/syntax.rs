@@ -7,6 +7,9 @@ pub enum Instruction {
     Loop { nodes: Vec<Instruction> },
     Write,
     Read,
+
+    // Optimization nodes
+    Set { value: u8 },
 }
 
 pub fn parse(str: &str) -> Result<Vec<Instruction>, ()> {
@@ -78,6 +81,9 @@ pub fn indented(instrs: &Vec<Instruction>, indent: usize) -> String {
             }
             Instruction::Read => {
                 result.push_str("Read\n");
+            }
+            Instruction::Set { value } => {
+                result.push_str(&format!("Set {}\n", value));
             }
         }
     }

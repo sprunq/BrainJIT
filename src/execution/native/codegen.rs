@@ -53,6 +53,7 @@ pub trait NativeCodeGenBackend {
             Instruction::Loop { nodes } => self.generate_loop(ops, nodes),
             Instruction::Write => self.generate_write(ops),
             Instruction::Read => self.generate_read(ops),
+            Instruction::Set { value } => self.generate_set(ops, *value),
         }
     }
 
@@ -65,4 +66,6 @@ pub trait NativeCodeGenBackend {
     fn generate_write(&self, ops: &mut Assembler<Self::Relocation>);
 
     fn generate_read(&self, ops: &mut Assembler<Self::Relocation>);
+
+    fn generate_set(&self, ops: &mut Assembler<Self::Relocation>, value: u8);
 }

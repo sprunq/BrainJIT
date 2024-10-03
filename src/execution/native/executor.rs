@@ -16,7 +16,7 @@ impl NativeExecutor {
         let f: extern "win64" fn(*mut State, *mut u8, *mut u8, *const u8) -> u8 =
             unsafe { mem::transmute(self.code.ptr(self.start)) };
         let start = state.tape.as_mut_ptr();
-        let end = unsafe { start.offset(TAPE_SIZE as isize) };
+        let end = unsafe { start.add(TAPE_SIZE) };
         let result = f(state, start, start, end);
         RuntimeResultCode::try_from(result).unwrap()
     }
