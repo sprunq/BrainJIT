@@ -32,9 +32,9 @@ impl<'a> State<'a> {
     }
 
     pub unsafe extern "C" fn putchar(state: &mut State, cell: *mut u8) -> u8 {
-        state
-            .output
-            .write_all(slice::from_raw_parts(cell, 1))
-            .is_err() as u8
+        match state.output.write_all(slice::from_raw_parts(cell, 1)) {
+            Ok(_) => 0,
+            Err(_) => 1,
+        }
     }
 }

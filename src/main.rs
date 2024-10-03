@@ -55,10 +55,13 @@ fn main() {
             time!(Interpreter::new().interpret(&nodes));
         }
         Mode::Compiled => {
-            let x = CodeGeneration::x64();
-            let code = x.generate(&nodes);
+            let codegen = CodeGeneration::x64();
+            let executor = codegen.generate(&nodes);
             let mut state = State::new(Box::new(std::io::stdin()), Box::new(std::io::stdout()));
-            time!(code.run(&mut state).unwrap());
+            let result = time!(executor.run(&mut state));
+            if result.is_error() {
+                eprintln!("Error: {:?}", result);
+            }
         }
     }
 }

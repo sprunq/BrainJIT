@@ -1,35 +1,6 @@
-use dynasmrt::{Assembler, AssemblyOffset};
-
-use crate::syntax::Instruction;
-
 use super::{executor::NativeExecutor, x64::X64CodeGen};
-pub trait NativeCodeGenBackend {
-    type Relocation: dynasmrt::relocations::Relocation;
-
-    fn generate_prolouge(&self, ops: &mut Assembler<Self::Relocation>) -> AssemblyOffset;
-
-    fn generate_epilouge(&self, ops: &mut Assembler<Self::Relocation>);
-
-    fn generate_instruction(&self, ops: &mut Assembler<Self::Relocation>, instr: &Instruction) {
-        match instr {
-            Instruction::Increment { value } => self.generate_increment(ops, value.0),
-            Instruction::CellIncrement { value } => self.generate_cell_increment(ops, *value),
-            Instruction::Loop { nodes } => self.generate_loop(ops, nodes),
-            Instruction::Write => self.generate_write(ops),
-            Instruction::Read => self.generate_read(ops),
-        }
-    }
-
-    fn generate_increment(&self, ops: &mut Assembler<Self::Relocation>, value: i8);
-
-    fn generate_cell_increment(&self, ops: &mut Assembler<Self::Relocation>, value: i32);
-
-    fn generate_loop(&self, ops: &mut Assembler<Self::Relocation>, nodes: &[Instruction]);
-
-    fn generate_write(&self, ops: &mut Assembler<Self::Relocation>);
-
-    fn generate_read(&self, ops: &mut Assembler<Self::Relocation>);
-}
+use crate::syntax::Instruction;
+use dynasmrt::{Assembler, AssemblyOffset};
 
 pub struct CodeGeneration<B>
 where
@@ -66,4 +37,32 @@ where
             Err(_) => todo!(),
         }
     }
+}
+
+pub trait NativeCodeGenBackend {
+    type Relocation: dynasmrt::relocations::Relocation;
+
+    fn generate_prolouge(&self, ops: &mut Assembler<Self::Relocation>) -> AssemblyOffset;
+
+    fn generate_epilouge(&self, ops: &mut Assembler<Self::Relocation>);
+
+    fn generate_instruction(&self, ops: &mut Assembler<Self::Relocation>, instr: &Instruction) {
+        match instr {
+            Instruction::Increment { value } => self.generate_increment(ops, value.0),
+            Instruction::CellIncrement { value } => self.generate_cell_increment(ops, *value),
+            Instruction::Loop { nodes } => self.generate_loop(ops, nodes),
+            Instruction::Write => self.generate_write(ops),
+            Instruction::Read => self.generate_read(ops),
+        }
+    }
+
+    fn generate_increment(&self, ops: &mut Assembler<Self::Relocation>, value: i8);
+
+    fn generate_cell_increment(&self, ops: &mut Assembler<Self::Relocation>, value: i32);
+
+    fn generate_loop(&self, ops: &mut Assembler<Self::Relocation>, nodes: &[Instruction]);
+
+    fn generate_write(&self, ops: &mut Assembler<Self::Relocation>);
+
+    fn generate_read(&self, ops: &mut Assembler<Self::Relocation>);
 }

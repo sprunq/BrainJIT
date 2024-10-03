@@ -1,13 +1,10 @@
-use dynasmrt::{x64::X64Relocation, Assembler, AssemblyOffset};
-
+use super::codegen::NativeCodeGenBackend;
+use crate::execution::native::RuntimeResultCode;
 use crate::{execution::native::state::State, syntax::Instruction};
 use dynasmrt::dynasm;
 use dynasmrt::DynasmApi;
 use dynasmrt::DynasmLabelApi;
-
-use super::codegen::NativeCodeGenBackend;
-
-pub struct X64CodeGen;
+use dynasmrt::{x64::X64Relocation, Assembler, AssemblyOffset};
 
 macro_rules! x64_alias_asm {
     ($ops:expr, $($t:tt)*) => {
@@ -19,6 +16,8 @@ macro_rules! x64_alias_asm {
         )
     }
 }
+
+pub struct X64CodeGen;
 
 impl NativeCodeGenBackend for X64CodeGen {
     type Relocation = X64Relocation;
@@ -45,21 +44,22 @@ impl NativeCodeGenBackend for X64CodeGen {
             };
         }
 
+        // All possible exit points from the program can be jumped to by their respective label.
         x64_alias_asm!(ops,
-            ;; epilogue!(ops, 0)
-            ;->overflow:
-            ;; epilogue!(ops, 1)
+            ;; epilogue!(ops, RuntimeResultCode::Ok as i32)
             ;->io_failure:
-            ;; epilogue!(ops, 2)
+            ;; epilogue!(ops, RuntimeResultCode::IoError as i32)
         );
     }
 
+    /// Handles overflows and underflows by wrapping around the value.
     fn generate_increment(&self, ops: &mut Assembler<Self::Relocation>, value: i8) {
         x64_alias_asm!(ops,
             ; add BYTE [rdx], value
         );
     }
 
+    /// Does not handle overflows and underflows. Will panic if the value is or out of bounds.
     fn generate_cell_increment(&self, ops: &mut Assembler<Self::Relocation>, value: i32) {
         x64_alias_asm!(ops,
             ; add cell_ptr, value
@@ -91,7 +91,7 @@ impl NativeCodeGenBackend for X64CodeGen {
     }
 
     fn generate_write(&self, ops: &mut Assembler<Self::Relocation>) {
-        X64CodeGen::generate_extern_call(ops, State::putchar as _);
+        X64CodeGen::call_state_fn_with_cell(ops, State::putchar as _);
         x64_alias_asm!(ops,
             ; cmp al, 0
             ; jnz ->io_failure
@@ -99,20 +99,19 @@ impl NativeCodeGenBackend for X64CodeGen {
     }
 
     fn generate_read(&self, ops: &mut Assembler<Self::Relocation>) {
-        {
-            X64CodeGen::generate_extern_call(ops, State::getchar as _);
-            x64_alias_asm!(ops,
-                ; cmp al, 0
-                ; jnz ->io_failure
-            );
-        };
+        X64CodeGen::call_state_fn_with_cell(ops, State::getchar as _);
+        x64_alias_asm!(ops,
+            ; cmp al, 0
+            ; jnz ->io_failure
+        );
     }
 }
 
 impl X64CodeGen {
-    pub fn generate_extern_call(ops: &mut Assembler<X64Relocation>, addr: *const ()) {
+    /// Calls a function with a signature of `fn(&mut State, *mut u8) -> u8`
+    fn call_state_fn_with_cell(ops: &mut Assembler<X64Relocation>, addr: *const ()) {
         x64_alias_asm!(ops,
-            ; mov[rsp+0x38],rdx
+            ; mov[rsp+0x38], cell_ptr
             ; mov rax,QWORD addr as _
             ; call rax
             ; mov rcx,[rsp+0x30]
