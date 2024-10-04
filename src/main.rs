@@ -39,7 +39,7 @@ struct Cli {
 
     #[arg(short, long)]
     #[clap(help = "Dump the binary to a file. Only works in compiled mode")]
-    dumb_binary: bool,
+    dump_binary: bool,
 
     #[arg(short, long, default_value = "30000")]
     #[clap(help = "The number of cells in the tape")]
@@ -92,7 +92,7 @@ fn main() {
             let codegen = CodeGeneration::x86_x64();
             let executor = codegen.generate(&nodes);
 
-            if cli.dumb_binary {
+            if cli.dump_binary {
                 executor.dump_binary("out.bin");
             }
 

@@ -24,7 +24,7 @@ Options:
   -m, --mode <MODE>            [default: jit] [possible values: jit, interpret]
   -p, --path <PATH>            The file to run
   -o, --optimize               Optimize the program
-  -d, --dumb-binary            Dump the binary to a file. Only works in compiled mode
+  -d, --dump-binary            Dump the binary to a file. Only works in compiled mode
   -t, --tape-size <TAPE_SIZE>  The number of cells in the tape [default: 30000]
   -h, --help                   Print help
   -V, --version                Print version
