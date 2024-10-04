@@ -5,6 +5,7 @@ Your friendly neighborhood [Brainfuck](https://en.wikipedia.org/wiki/Brainfuck) 
 ## Performance
 
 We got a 17.5x speedup from basic interpretation to full JIT with optimizations!
+
 _Note: many more optimizations could be applied_.
 
 Tested on the classic `mandelbrot.bf`:
