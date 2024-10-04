@@ -1,17 +1,19 @@
-use std::io::{self, Read, Write};
-
 use crate::syntax::Instruction;
+use std::io::{Read, Write};
 
-#[derive(Debug)]
-pub struct Interpreter {
-    tape: Vec<u8>,
+pub struct Interpreter<'a> {
+    input: Box<dyn Read + 'a>,
+    output: Box<dyn Write + 'a>,
+    tape: Box<[u8]>,
     pointer: usize,
 }
 
-impl Interpreter {
-    pub fn new(tape_size: usize) -> Self {
+impl<'a> Interpreter<'a> {
+    pub fn new(input: Box<dyn Read + 'a>, output: Box<dyn Write + 'a>, tape_size: usize) -> Self {
         Interpreter {
-            tape: vec![0; tape_size],
+            input,
+            output,
+            tape: vec![0; tape_size].into_boxed_slice(),
             pointer: 0,
         }
     }
@@ -19,10 +21,10 @@ impl Interpreter {
     pub fn interpret(&mut self, instructions: &[Instruction]) {
         for instruction in instructions {
             match instruction {
-                Instruction::Increment { value } => {
+                Instruction::Add { value } => {
                     self.tape[self.pointer] = self.tape[self.pointer].wrapping_add_signed(value.0);
                 }
-                Instruction::CellIncrement { value } => {
+                Instruction::Move { value } => {
                     self.pointer = (self.pointer as isize + *value as isize) as usize;
                 }
                 Instruction::Loop { nodes } => {
@@ -31,12 +33,11 @@ impl Interpreter {
                     }
                 }
                 Instruction::Write => {
-                    print!("{}", self.tape[self.pointer] as char);
-                    io::stdout().flush().unwrap();
+                    self.output.write_all(&[self.tape[self.pointer]]).unwrap();
                 }
                 Instruction::Read => {
                     let mut buffer = [0];
-                    io::stdin().read_exact(&mut buffer).unwrap();
+                    self.input.read_exact(&mut buffer).unwrap();
                     self.tape[self.pointer] = buffer[0];
                 }
                 Instruction::Set { value } => {

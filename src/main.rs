@@ -3,22 +3,19 @@ use execution::{
     interpreter::Interpreter,
     native::{codegen::CodeGeneration, state::State},
 };
-use optimize::{
-    peephole::{CombineIncrements, ReplaceSet},
-    OptimizationPass,
-};
+use optimize::{peephole::*, OptimizationPass};
 pub mod execution;
 pub mod optimize;
 pub mod syntax;
 use std::{io::Write, path::PathBuf};
 
 macro_rules! time {
-    ($e:expr) => {{
+    ( $msg:expr, $e:expr) => {{
         let start = std::time::Instant::now();
         let result = $e;
         let elapsed = start.elapsed();
         std::io::stdout().flush().unwrap();
-        println!("Time: {:?}", elapsed);
+        println!("{}: {:?}", $msg, elapsed);
         result
     }};
 }
@@ -41,9 +38,13 @@ struct Cli {
     #[clap(help = "Dump the binary to a file. Only works in compiled mode")]
     dumb_binary: bool,
 
-    #[arg(short, long, default_value = "30000")]
+    #[arg(long, default_value = "30000")]
     #[clap(help = "The number of cells in the tape")]
     tape_size: usize,
+
+    #[arg(long)]
+    #[clap(help = "Print timings for each pass")]
+    timings: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -56,11 +57,15 @@ fn main() {
     let cli = Cli::parse();
 
     let s = std::fs::read_to_string(&cli.path).unwrap();
-    let mut nodes = syntax::parse(&s).unwrap();
+    let mut nodes = time!("Parse", syntax::parse(&s).unwrap());
 
     if cli.optimize {
-        nodes = CombineIncrements.optimize(nodes);
-        nodes = ReplaceSet.optimize(nodes);
+        nodes = time!(
+            "OptimizeCombineIncrements",
+            CombineIncrements.optimize(nodes)
+        );
+        nodes = time!("OptimizeReplaceSet", ReplaceSet.optimize(nodes));
+        nodes = time!("OptimizeCombineSets", CombineSets.optimize(nodes));
     }
 
     if true {
@@ -70,7 +75,15 @@ fn main() {
 
     match cli.mode {
         Mode::Interpret => {
-            time!(Interpreter::new(cli.tape_size).interpret(&nodes));
+            time!(
+                "Execution finished in",
+                Interpreter::new(
+                    Box::new(std::io::stdin()),
+                    Box::new(std::io::stdout()),
+                    cli.tape_size
+                )
+                .interpret(&nodes)
+            );
         }
         Mode::Jit => {
             if std::env::consts::ARCH != "x86_64" {
@@ -89,7 +102,7 @@ fn main() {
                 Box::new(std::io::stdout()),
                 cli.tape_size,
             );
-            let result = time!(executor.run(&mut state));
+            let result = time!("Execution finished in", executor.run(&mut state));
             if result.is_error() {
                 eprintln!("Error: {:?}", result);
             }

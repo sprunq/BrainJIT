@@ -1,8 +1,7 @@
 use super::{MapLoopsExt, OptimizationPass};
 use crate::syntax::Instruction;
-use itertools::Itertools;
-
 use crate::syntax::Instruction::*;
+use itertools::Itertools;
 
 pub struct CombineIncrements;
 
@@ -11,10 +10,8 @@ impl OptimizationPass for CombineIncrements {
         nodes
             .into_iter()
             .coalesce(|prev, current| match (prev, current) {
-                (Increment { value: a }, Increment { value: b }) => Ok(Increment { value: a + b }),
-                (CellIncrement { value: a }, CellIncrement { value: b }) => {
-                    Ok(CellIncrement { value: a + b })
-                }
+                (Add { value: a }, Add { value: b }) => Ok(Add { value: a + b }),
+                (Move { value: a }, Move { value: b }) => Ok(Move { value: a + b }),
                 (a, b) => Err((a, b)),
             })
             .map_loops(Self)
@@ -32,7 +29,7 @@ impl OptimizationPass for ReplaceSet {
                 if let Loop { ref nodes } = instr {
                     if nodes.len() == 1 {
                         let inner = &nodes[0];
-                        if let Increment { value } = inner {
+                        if let Add { value } = inner {
                             let value = value.0;
                             if value == -1 || value == 1 {
                                 return Set { value: 0 };
@@ -41,6 +38,28 @@ impl OptimizationPass for ReplaceSet {
                     }
                 }
                 instr
+            })
+            .map_loops(Self)
+            .collect()
+    }
+}
+
+/// Combines consecutive `Set` instructions into a single `Set` instruction.
+/// Combines `Set` and `Add` instructions into a single `Set` instruction.
+/// Combines `Add` and `Set` instructions into a single `Set` instruction with the Add value being discarded.
+pub struct CombineSets;
+
+impl OptimizationPass for CombineSets {
+    fn optimize(&self, nodes: Vec<Instruction>) -> Vec<Instruction> {
+        nodes
+            .into_iter()
+            .coalesce(|prev, current| match (prev, current) {
+                (Set { value: a }, Set { value: b }) => Ok(Set { value: a + b }),
+                (Set { value: a }, Add { value: b }) => Ok(Set {
+                    value: a.wrapping_add_signed(b.0),
+                }),
+                (Add { value: _ }, Set { value: b }) => Ok(Set { value: b }),
+                (a, b) => Err((a, b)),
             })
             .map_loops(Self)
             .collect()

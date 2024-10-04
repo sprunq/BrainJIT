@@ -2,8 +2,8 @@ use std::num::Wrapping;
 
 #[derive(Clone)]
 pub enum Instruction {
-    Increment { value: Wrapping<i8> },
-    CellIncrement { value: i32 },
+    Add { value: Wrapping<i8> },
+    Move { value: i32 },
     Loop { nodes: Vec<Instruction> },
     Write,
     Read,
@@ -19,18 +19,18 @@ pub fn parse(str: &str) -> Result<Vec<Instruction>, ()> {
     for char in str.chars() {
         match char {
             '+' => {
-                nodes.push(Instruction::Increment { value: Wrapping(1) });
+                nodes.push(Instruction::Add { value: Wrapping(1) });
             }
             '-' => {
-                nodes.push(Instruction::Increment {
+                nodes.push(Instruction::Add {
                     value: Wrapping(-1),
                 });
             }
             '>' => {
-                nodes.push(Instruction::CellIncrement { value: 1 });
+                nodes.push(Instruction::Move { value: 1 });
             }
             '<' => {
-                nodes.push(Instruction::CellIncrement { value: -1 });
+                nodes.push(Instruction::Move { value: -1 });
             }
             '.' => {
                 nodes.push(Instruction::Write);
@@ -66,11 +66,11 @@ pub fn indented(instrs: &Vec<Instruction>, indent: usize) -> String {
     for instr in instrs {
         result.push_str(&" ".repeat(indent));
         match instr {
-            Instruction::Increment { value } => {
-                result.push_str(&format!("Increment {}\n", value.0));
+            Instruction::Add { value } => {
+                result.push_str(&format!("Add {}\n", value.0));
             }
-            Instruction::CellIncrement { value } => {
-                result.push_str(&format!("CellIncrement {}\n", value));
+            Instruction::Move { value } => {
+                result.push_str(&format!("Move {}\n", value));
             }
             Instruction::Loop { nodes } => {
                 result.push_str("Loop\n");

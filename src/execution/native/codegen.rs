@@ -48,8 +48,8 @@ pub trait NativeCodeGenBackend {
 
     fn generate_instruction(&self, ops: &mut Assembler<Self::Relocation>, instr: &Instruction) {
         match instr {
-            Instruction::Increment { value } => self.generate_increment(ops, value.0),
-            Instruction::CellIncrement { value } => self.generate_cell_increment(ops, *value),
+            Instruction::Add { value } => self.generate_increment(ops, value.0),
+            Instruction::Move { value } => self.generate_cell_increment(ops, *value),
             Instruction::Loop { nodes } => self.generate_loop(ops, nodes),
             Instruction::Write => self.generate_write(ops),
             Instruction::Read => self.generate_read(ops),
