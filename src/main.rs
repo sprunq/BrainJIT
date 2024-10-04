@@ -3,7 +3,10 @@ use execution::{
     interpreter::Interpreter,
     native::{codegen::CodeGeneration, state::State},
 };
-use optimize::{peephole::CombineIncrements, OptimizationPass};
+use optimize::{
+    peephole::{CombineIncrements, ReplaceSet},
+    OptimizationPass,
+};
 pub mod execution;
 pub mod optimize;
 pub mod syntax;
@@ -57,7 +60,7 @@ fn main() {
 
     if cli.optimize {
         nodes = CombineIncrements.optimize(nodes);
-        //nodes = ReplaceSet.optimize(nodes);
+        nodes = ReplaceSet.optimize(nodes);
     }
 
     if true {

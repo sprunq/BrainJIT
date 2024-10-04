@@ -8,6 +8,7 @@ pub mod x86_64;
 pub enum RuntimeResultCode {
     Ok = 0,
     IoError = 1,
+    CellOutOfBounds = 2,
 }
 
 impl RuntimeResultCode {
@@ -23,6 +24,7 @@ impl TryFrom<u8> for RuntimeResultCode {
         match value {
             0 => Ok(RuntimeResultCode::Ok),
             1 => Ok(RuntimeResultCode::IoError),
+            2 => Ok(RuntimeResultCode::CellOutOfBounds),
             _ => Err("Invalid result code"),
         }
     }

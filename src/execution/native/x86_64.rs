@@ -15,9 +15,10 @@ macro_rules! alias_asm {
     ($ops:expr, $($t:tt)*) => {
         dynasm!($ops
             ; .arch x64
-            ; .alias state, r12
-            ; .alias tape_start, r13
-            ; .alias tape_end, r14
+            ; .alias state, r11
+            ; .alias tape_start, r12
+            ; .alias tape_end, r13
+            ; .alias tape_size, r14
             ; .alias cell_ptr, r15
 
             ; .alias retval, rax
@@ -43,6 +44,7 @@ macro_rules! alias_asm {
             ; .alias tape_start, r13
             ; .alias tape_end, r14
             ; .alias cell_ptr, r15
+            ; .alias tape_size, r11
 
             ; .alias retval, rax
             ; .alias retval_lower_8, al
@@ -61,11 +63,12 @@ macro_rules! alias_asm {
 macro_rules! x64_save_registers {
     ($ops:expr) => {
         alias_asm!($ops,
-            ; sub rsp, 32
+            ; sub rsp, 40
             ; push state
             ; push tape_start
             ; push tape_end
             ; push cell_ptr
+            ; push tape_size
         );
     };
 }
@@ -73,11 +76,12 @@ macro_rules! x64_save_registers {
 macro_rules! x64_restore_registers {
     ($ops:expr) => {
         alias_asm!($ops,
+            ; pop tape_size
             ; pop cell_ptr
             ; pop tape_end
             ; pop tape_start
             ; pop state
-            ; add rsp, 32
+            ; add rsp, 40
         );
     };
 }
@@ -92,7 +96,7 @@ impl NativeCodeGenBackend for X86_64CodeGen {
         let start = ops.offset();
         alias_asm!(ops,
             // Allocate shadow space for win64 calling convention
-            ; sub rsp, 32
+            ; sub rsp, 40
 
             ;; x64_save_registers!(ops)
 
@@ -103,6 +107,10 @@ impl NativeCodeGenBackend for X86_64CodeGen {
             ; mov tape_end, third_arg
 
             ; mov cell_ptr, tape_start
+
+            // Calculate the tape size
+            ; mov tape_size, tape_end
+            ; sub tape_size, tape_start
         );
         start
     }
@@ -113,7 +121,7 @@ impl NativeCodeGenBackend for X86_64CodeGen {
                 alias_asm!($ops,
                     ;; x64_restore_registers!($ops)
                     ; mov retval, $e
-                    ; add rsp, 32
+                    ; add rsp, 40
                     ; ret
                 );
             };
@@ -124,6 +132,8 @@ impl NativeCodeGenBackend for X86_64CodeGen {
             ;; epilogue!(ops, 0)
             ;->error_io:
             ;; epilogue!(ops, 1)
+            ;->error_bounds:
+            ;; epilogue!(ops, 2)
         );
     }
 
@@ -140,11 +150,21 @@ impl NativeCodeGenBackend for X86_64CodeGen {
         );
     }
 
-    /// Does not handle overflows and underflows. Will panic if the value is or out of bounds.
     fn generate_cell_increment(&self, ops: &mut Assembler<Self::Relocation>, value: i32) {
         alias_asm!(ops,
             ; add cell_ptr, value
         );
+        if value > 0 {
+            alias_asm!(ops,
+                ; cmp cell_ptr, tape_end
+                ; jae ->error_bounds
+            );
+        } else {
+            alias_asm!(ops,
+                ; cmp cell_ptr, tape_start
+                ; jb ->error_bounds
+            );
+        }
     }
 
     fn generate_loop(&self, ops: &mut Assembler<Self::Relocation>, nodes: &[Instruction]) {
