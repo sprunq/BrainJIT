@@ -67,7 +67,7 @@ fn main() {
         nodes = time!("OptimizeCombineSets", CombineSets.optimize(nodes));
     }
 
-    if true {
+    if cli.dump_binary {
         let mut file = std::fs::File::create("optimized.txt").unwrap();
         writeln!(file, "{}", syntax::indented(&nodes, 0)).unwrap();
     }
