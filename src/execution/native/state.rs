@@ -18,13 +18,11 @@ impl<'a> State<'a> {
         }
     }
 
-    #[cfg(target_arch = "x86_64")]
     #[cfg(target_os = "windows")]
     pub unsafe extern "win64" fn getchar(state: &mut State, cell: *mut u8) -> u8 {
         Self::getchar_inner(state, cell)
     }
 
-    #[cfg(target_arch = "x86_64")]
     #[cfg(target_os = "windows")]
     pub unsafe extern "win64" fn putchar(state: &mut State, cell: *mut u8) -> u8 {
         Self::putchar_inner(state, cell)
