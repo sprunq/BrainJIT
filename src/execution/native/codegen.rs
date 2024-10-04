@@ -24,7 +24,7 @@ where
     B: NativeCodeGenBackend,
 {
     pub fn generate(mut self, instrs: &[Instruction]) -> NativeExecutor {
-        let start = self.codegen.generate_prolouge(&mut self.ops);
+        let code_start = self.codegen.generate_prolouge(&mut self.ops);
 
         for instr in instrs {
             self.codegen.generate_instruction(&mut self.ops, instr);
@@ -33,8 +33,8 @@ where
         self.codegen.generate_epilouge(&mut self.ops);
 
         match self.ops.finalize() {
-            Ok(code) => NativeExecutor::new(code, start),
-            Err(_) => todo!(),
+            Ok(code) => NativeExecutor::new(code, code_start),
+            Err(_) => panic!("Failed to finalize code"),
         }
     }
 }

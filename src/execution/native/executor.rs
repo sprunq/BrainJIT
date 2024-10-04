@@ -1,23 +1,41 @@
+use super::{state::State, RuntimeResultCode};
+use std::fs::File;
+use std::io::Write;
 use std::mem;
-
-use super::{state::State, RuntimeResultCode, TAPE_SIZE};
 
 pub struct NativeExecutor {
     code: dynasmrt::ExecutableBuffer,
-    start: dynasmrt::AssemblyOffset,
+    code_start: dynasmrt::AssemblyOffset,
 }
 
 impl NativeExecutor {
-    pub fn new(code: dynasmrt::ExecutableBuffer, start: dynasmrt::AssemblyOffset) -> Self {
-        Self { code, start }
+    pub fn new(code: dynasmrt::ExecutableBuffer, code_start: dynasmrt::AssemblyOffset) -> Self {
+        Self { code, code_start }
     }
 
     pub fn run(self, state: &mut State) -> RuntimeResultCode {
-        let f: extern "win64" fn(*mut State, *mut u8, *mut u8, *const u8) -> u8 =
-            unsafe { mem::transmute(self.code.ptr(self.start)) };
-        let start = state.tape.as_mut_ptr();
-        let end = unsafe { start.add(TAPE_SIZE) };
-        let result = f(state, start, start, end);
+        #[cfg(target_os = "windows")]
+        let native_code: extern "win64" fn(
+            state: *mut State,
+            tape_start: *mut u8,
+            tape_end: *mut u8,
+        ) -> u8 = unsafe { mem::transmute(self.code.ptr(self.code_start)) };
+
+        #[cfg(target_os = "linux")]
+        let native_code: extern "sysv64" fn(
+            state: *mut State,
+            tape_start: *mut u8,
+            tape_end: *mut u8,
+        ) -> u8 = unsafe { mem::transmute(self.code.ptr(self.code_start)) };
+
+        let tape_start = state.tape.as_mut_ptr();
+        let tape_end = unsafe { tape_start.add(state.tape.len()) };
+        let result = native_code(state, tape_start, tape_end);
         RuntimeResultCode::try_from(result).unwrap()
+    }
+
+    pub fn dump_binary(&self, path: &str) {
+        let mut file = File::create(path).unwrap();
+        file.write_all(&self.code).unwrap();
     }
 }

@@ -3,11 +3,7 @@ use execution::{
     interpreter::Interpreter,
     native::{codegen::CodeGeneration, state::State},
 };
-use optimize::{
-    peephole::{CombineIncrements, ReplaceSet},
-    OptimizationPass,
-};
-
+use optimize::{peephole::CombineIncrements, OptimizationPass};
 pub mod execution;
 pub mod optimize;
 pub mod syntax;
@@ -27,20 +23,30 @@ macro_rules! time {
 #[derive(clap::Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
-    #[arg(value_enum, default_value_t=Mode::Compiled)]
+    #[arg(short, long, value_enum, default_value_t=Mode::Jit)]
     mode: Mode,
 
     #[arg(short, long)]
+    #[clap(help = "The file to run")]
     path: PathBuf,
 
     #[arg(short, long)]
+    #[clap(help = "Optimize the program")]
     optimize: bool,
+
+    #[arg(short, long)]
+    #[clap(help = "Dump the binary to a file. Only works in compiled mode")]
+    dumb_binary: bool,
+
+    #[arg(short, long, default_value = "30000")]
+    #[clap(help = "The number of cells in the tape")]
+    tape_size: usize,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 enum Mode {
-    Compiled,
-    Interpreted,
+    Jit,
+    Interpret,
 }
 
 fn main() {
@@ -51,7 +57,7 @@ fn main() {
 
     if cli.optimize {
         nodes = CombineIncrements.optimize(nodes);
-        nodes = ReplaceSet.optimize(nodes);
+        //nodes = ReplaceSet.optimize(nodes);
     }
 
     if true {
@@ -60,13 +66,22 @@ fn main() {
     }
 
     match cli.mode {
-        Mode::Interpreted => {
-            time!(Interpreter::new(30_000).interpret(&nodes));
+        Mode::Interpret => {
+            time!(Interpreter::new(cli.tape_size).interpret(&nodes));
         }
-        Mode::Compiled => {
+        Mode::Jit => {
             let codegen = CodeGeneration::x64();
             let executor = codegen.generate(&nodes);
-            let mut state = State::new(Box::new(std::io::stdin()), Box::new(std::io::stdout()));
+
+            if cli.dumb_binary {
+                executor.dump_binary("out.bin");
+            }
+
+            let mut state = State::new(
+                Box::new(std::io::stdin()),
+                Box::new(std::io::stdout()),
+                cli.tape_size,
+            );
             let result = time!(executor.run(&mut state));
             if result.is_error() {
                 eprintln!("Error: {:?}", result);

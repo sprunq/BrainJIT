@@ -3,8 +3,6 @@ pub mod executor;
 pub mod state;
 pub mod x64;
 
-const TAPE_SIZE: usize = 30000;
-
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RuntimeResultCode {
