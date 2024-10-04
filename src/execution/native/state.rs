@@ -30,14 +30,12 @@ impl<'a> State<'a> {
         Self::putchar_inner(state, cell)
     }
 
-    #[cfg(target_arch = "x86_64")]
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
     pub unsafe extern "sysv64" fn getchar(state: &mut State, cell: *mut u8) -> u8 {
         Self::getchar_inner(state, cell)
     }
 
-    #[cfg(target_arch = "x86_64")]
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
     pub unsafe extern "sysv64" fn putchar(state: &mut State, cell: *mut u8) -> u8 {
         Self::putchar_inner(state, cell)
     }

@@ -10,7 +10,6 @@ use dynasmrt::{x64::X64Relocation, Assembler, AssemblyOffset};
 /// Registers are nonvolatile and must be presereved
 /// across function calls by the callee.
 /// https://learn.microsoft.com/en-us/cpp/build/x64-software-conventions?view=msvc-170
-#[cfg(target_arch = "x86_64")]
 #[cfg(target_os = "windows")]
 macro_rules! alias_asm {
     ($ops:expr, $($t:tt)*) => {
@@ -35,8 +34,7 @@ macro_rules! alias_asm {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 macro_rules! alias_asm {
     ($ops:expr, $($t:tt)*) => {
         dynasm!($ops
