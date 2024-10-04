@@ -83,9 +83,9 @@ macro_rules! x64_restore_registers {
 }
 
 /// The x64 code generation backend. Only for windows x64.
-pub struct X64CodeGen;
+pub struct X86_64CodeGen;
 
-impl NativeCodeGenBackend for X64CodeGen {
+impl NativeCodeGenBackend for X86_64CodeGen {
     type Relocation = X64Relocation;
 
     fn generate_prolouge(&self, ops: &mut Assembler<Self::Relocation>) -> AssemblyOffset {

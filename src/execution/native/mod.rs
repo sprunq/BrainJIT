@@ -1,7 +1,7 @@
 pub mod codegen;
 pub mod executor;
 pub mod state;
-pub mod x64;
+pub mod x86_64;
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

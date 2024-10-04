@@ -1,4 +1,4 @@
-use super::{executor::NativeExecutor, x64::X64CodeGen};
+use super::{executor::NativeExecutor, x86_64::X86_64CodeGen};
 use crate::syntax::Instruction;
 use dynasmrt::{Assembler, AssemblyOffset};
 
@@ -10,10 +10,10 @@ where
     ops: dynasmrt::Assembler<B::Relocation>,
 }
 
-impl CodeGeneration<X64CodeGen> {
-    pub fn x64() -> CodeGeneration<X64CodeGen> {
+impl CodeGeneration<X86_64CodeGen> {
+    pub fn x86_x64() -> CodeGeneration<X86_64CodeGen> {
         CodeGeneration {
-            codegen: X64CodeGen,
+            codegen: X86_64CodeGen,
             ops: dynasmrt::x64::Assembler::new().unwrap(),
         }
     }

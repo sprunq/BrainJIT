@@ -70,7 +70,11 @@ fn main() {
             time!(Interpreter::new(cli.tape_size).interpret(&nodes));
         }
         Mode::Jit => {
-            let codegen = CodeGeneration::x64();
+            if std::env::consts::ARCH != "x86_64" {
+                panic!("Only x86_64 is supported");
+            }
+
+            let codegen = CodeGeneration::x86_x64();
             let executor = codegen.generate(&nodes);
 
             if cli.dumb_binary {
