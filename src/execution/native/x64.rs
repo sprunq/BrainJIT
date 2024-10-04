@@ -22,6 +22,9 @@ macro_rules! alias_asm {
             ; .alias cell_ptr, r15
 
             ; .alias retval, rax
+            ; .alias retval_lower_8, al
+
+            ; .alias fn_call_reg, rax
 
             ; .alias first_arg, rcx
             ; .alias second_arg, rdx
@@ -44,6 +47,9 @@ macro_rules! alias_asm {
             ; .alias cell_ptr, r15
 
             ; .alias retval, rax
+            ; .alias retval_lower_8, al
+
+            ; .alias fn_call_reg, rax
 
             ; .alias first_arg, rdi
             ; .alias second_arg, rsi
@@ -173,12 +179,12 @@ impl NativeCodeGenBackend for X64CodeGen {
 
             ; mov first_arg, state
             ; mov second_arg, cell_ptr
-            ; mov rax, QWORD State::putchar as *const () as i64
-            ; call rax
+            ; mov fn_call_reg, QWORD State::putchar as *const () as i64
+            ; call fn_call_reg
 
             ;; x64_restore_registers!(ops)
 
-            ; cmp al, 0
+            ; cmp retval_lower_8, 0
             ; jnz ->error_io
         );
     }
@@ -189,12 +195,12 @@ impl NativeCodeGenBackend for X64CodeGen {
 
             ; mov first_arg, state
             ; mov second_arg, cell_ptr
-            ; mov rax, QWORD State::getchar as *const () as i64
-            ; call rax
+            ; mov fn_call_reg, QWORD State::getchar as *const () as i64
+            ; call fn_call_reg
 
             ;; x64_restore_registers!(ops)
 
-            ; cmp al, 0
+            ; cmp retval_lower_8, 0
             ; jnz ->error_io
         );
     }
