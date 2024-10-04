@@ -7,7 +7,10 @@ use optimize::{peephole::*, OptimizationPass};
 pub mod execution;
 pub mod optimize;
 pub mod syntax;
-use std::{io::Write, path::PathBuf};
+use std::{
+    io::{BufWriter, Write},
+    path::PathBuf,
+};
 
 macro_rules! time {
     ( $msg:expr, $e:expr) => {{
@@ -38,13 +41,9 @@ struct Cli {
     #[clap(help = "Dump the binary to a file. Only works in compiled mode")]
     dumb_binary: bool,
 
-    #[arg(long, default_value = "30000")]
+    #[arg(short, long, default_value = "30000")]
     #[clap(help = "The number of cells in the tape")]
     tape_size: usize,
-
-    #[arg(long)]
-    #[clap(help = "Print timings for each pass")]
-    timings: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -79,7 +78,7 @@ fn main() {
                 "Execution finished in",
                 Interpreter::new(
                     Box::new(std::io::stdin()),
-                    Box::new(std::io::stdout()),
+                    Box::new(BufWriter::new(std::io::stdout())),
                     cli.tape_size
                 )
                 .interpret(&nodes)
@@ -99,7 +98,7 @@ fn main() {
 
             let mut state = State::new(
                 Box::new(std::io::stdin()),
-                Box::new(std::io::stdout()),
+                Box::new(BufWriter::new(std::io::stdout())),
                 cli.tape_size,
             );
             let result = time!("Execution finished in", executor.run(&mut state));
